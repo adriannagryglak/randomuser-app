@@ -1,16 +1,12 @@
 {
   "users": [
     {
-      "name": "Duszek",
-      "id": 0
+      "name": "Patr",
+      "id": 1
     },
     {
-      "id": 1,
-      "name": "PATR"
-    },
-    {
-      "name": "Pchełka",
-      "id": 3
+      "name": "Ada",
+      "id": 2
     }
   ]
 }
