@@ -1,117 +1,47 @@
 import { useEffect, useState } from "react";
 import UserCard from "./UserCard";
 import { useSelector, useDispatch } from "react-redux";
-import { getUsers, addUser, deleteUser, updateUser } from "./features/Users";
+import { fetchUsers, addUser, allUsersSelector, usersStatusSelector, usersErrorSelector } from "./features/Users";
+import { nanoid } from "@reduxjs/toolkit";
 
 function App() {
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [addedUser, setAddedUser] = useState("");
 
-  const users = useSelector((state) => state.users.value);
+  const [addedUser, setAddedUser] = useState("");
+  const users = useSelector(allUsersSelector); 
+  const status = useSelector(usersStatusSelector);
+  const errors = useSelector(usersErrorSelector);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const fetchingData = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/users");
-        if (!response.ok) {
-          throw Error("ooops we've got an issue");
-        }
-        const data = await response.json();
-        dispatch(getUsers(data));
-        setError(null);
-      } catch (err) {
-        setError("ooops we've got an issue " + err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchingData();
+    if (status === "idle") {
+      dispatch(fetchUsers());
+      //this could happen earlier in index.js - question to ask
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [status]);
 
   function handleAdd() {
-    const id = users.length === 0 ? 0 : users[users.length - 1].id + 1;
-    const user = { name: addedUser, id };
-
-    fetch("http://localhost:8000/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(user),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`couldn't add new user`);
-        }
-        dispatch(addUser(user));
-      })
-      .catch((err) => {
-        setError("ooops we've got an issue " + err.message);
-      });
+    dispatch(addUser({ name: addedUser, id: nanoid() }));
+    setAddedUser("");
   }
 
-  function handleDelete(id) {
-    fetch(`http://localhost:8000/users/${id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`couldn't delete this user`);
-        }
-        dispatch(deleteUser({ id }));
-      })
-      .catch((err) => {
-        setError("ooops we've got an issue " + err.message);
-      });
-  }
-
-  function handleUpdate(id, name) {
-    fetch(`http://localhost:8000/users/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, name }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`couldn't update this user`);
-        }
-        dispatch(updateUser({ id, name }));
-      })
-      .catch((err) => {
-        setError("ooops we've got an issue " + err.message);
-      });
-  }
+  const content = status === 'loading' ? <p>LOADING....</p> : 
+                status === 'succeeded' && users.length > 0 ? users.map(user => <UserCard user={user} key={user.id}/>) :
+                status === 'failed' ? <p>{errors}</p> : null;
 
   return (
     <div className="App">
       <header className="App-header">
         Hello world this is CRUD exercise
-        {isLoading ? <p>Loading...</p> : <p>LOADED</p>}
-        {error && <p>{error}</p>}
-        <div className="add">
+        <div>
           <input
             placeholder="Name"
-            onChange={(e) => {
-              setAddedUser(e.target.value);
-            }}
-          ></input>
+            value={addedUser}
+            onChange={e => setAddedUser(e.target.value)}
+          />
           <button onClick={handleAdd}>Add User</button>
         </div>
-        {users.map((user, i) => {
-          return (
-            <UserCard
-              data={user}
-              key={i}
-              delete={() => {
-                handleDelete(user.id);
-              }}
-              update={handleUpdate}
-            />
-          );
-        })}
+        {content}
       </header>
     </div>
   );
