@@ -1,49 +1,69 @@
-import { useEffect, useState } from "react";
-import UserCard from "./UserCard";
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, addUser, allUsersSelector, usersStatusSelector, usersErrorSelector } from "./features/Users";
-import { nanoid } from "@reduxjs/toolkit";
+import {
+  fetchUsers,
+  fetchRandomUsers,
+  usersStatusSelector,
+  addUser,
+  allUsersSelector,
+  TestSelector
+} from "./features/Users.js";
+import { themeSelector, getTheme } from "./features/Theme";
+import UsersList from "./components/UsersList.js";
+import GlobalStyles from "./components/styles/Global";
+import Header from "./components/Header.js";
+import AddUser from "./components/AddUser.js";
+import { FooterStyled } from "./components/styles/FooterStyled.js";
+import { theme } from "./components/styles/ThemeStyled";
+import { ThemeProvider } from "styled-components";
 
 function App() {
-
-  const [addedUser, setAddedUser] = useState("");
-  const users = useSelector(allUsersSelector); 
   const status = useSelector(usersStatusSelector);
-  const errors = useSelector(usersErrorSelector);
+  const users = useSelector(allUsersSelector);
+  const test = useSelector(TestSelector);
+  const isLight = useSelector(themeSelector);
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (status === "idle") {
       dispatch(fetchUsers());
-      //this could happen earlier in index.js - question to ask
+      //this could happen earlier in index.js ?
+      //why look at status not just do it for the first render ?
+    } else if (status === "succeeded" && users.length === 0) {
+      dispatch(fetchRandomUsers());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  function handleAdd() {
-    dispatch(addUser({ name: addedUser, id: nanoid() }));
-    setAddedUser("");
-  }
+  useEffect(() => {
+    dispatch(getTheme());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const content = status === 'loading' ? <p>LOADING....</p> : 
-                status === 'succeeded' && users.length > 0 ? users.map(user => <UserCard user={user} key={user.id}/>) :
-                status === 'failed' ? <p>{errors}</p> : null;
+  useEffect(() => {
+   if(test){
+    users.forEach(user => {
+      dispatch(addUser(user));
+    })
+   }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [test]);
+
 
   return (
-    <div className="App">
-      <header className="App-header">
-        Hello world this is CRUD exercise
-        <div>
-          <input
-            placeholder="Name"
-            value={addedUser}
-            onChange={e => setAddedUser(e.target.value)}
-          />
-          <button onClick={handleAdd}>Add User</button>
-        </div>
-        {content}
-      </header>
-    </div>
+    <ThemeProvider theme={isLight ? theme.light : theme.dark}>
+      <>
+        <GlobalStyles />
+        <Header />
+        <main>
+          <AddUser />
+          <UsersList />
+        </main>
+        <FooterStyled>
+          <p>made with love</p>
+        </FooterStyled>
+      </>
+    </ThemeProvider>
   );
 }
 
