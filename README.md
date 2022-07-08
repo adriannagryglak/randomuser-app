@@ -1,10 +1,17 @@
-# Getting Started with Create React App
+## Simple CRUD app, created (with love) for learning purposes.
+Add, delete, update users list into json-server with help of redux. 
+
+Still in development :) !
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
 
 In the project directory, you can run:
+
+### `npm server` 
+
+To start local server (json-server) on port 8000. Database file - db.json
 
 ### `npm start`
 
